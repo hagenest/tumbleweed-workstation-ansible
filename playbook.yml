@@ -1,0 +1,138 @@
+# Ansible playbook for my tumbleweed work machine
+---
+
+# - name: Only one login password
+#   become: true
+#   hosts: localhost
+#   when: 
+#   tasks:
+#     - shell: sudo touch /.root.key
+
+
+- name: Install vscode
+  hosts: localhost
+  become: true
+
+  tasks:
+    - name: check if vs-code is installed
+      shell: code --version
+      register: code_version_cmd
+      changed_when: false
+      ignore_errors: true
+      become: false
+
+    - name: add microsoft key
+      shell: rpm --import https://packages.microsoft.com/keys/microsoft.asc
+      when: code_version_cmd is failed
+
+    - name: add microsoft repo
+      shell: zypper addrepo https://packages.microsoft.com/yumrepos/vscode vscode
+      when: code_version_cmd is failed
+
+    - name: install vs-code
+      zypper:
+        name: code
+        state: present
+        refresh: yes
+      when: code_version_cmd is failed
+
+
+- name: Install desktop applications
+  hosts: localhost
+
+  tasks:
+    - zypper:
+        name: flatpak
+        state: present
+      become: true
+
+    - flatpak_remote:
+        name: flathub
+        state: present
+        flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
+        method: user
+
+    - flatpak:
+        name: org.chromium.Chromium
+        state: present
+        method: user
+
+    - flatpak:
+        name: flatseal
+        state: present
+        method: user
+
+    - flatpak:
+        name: com.mattjakeman.ExtensionManager
+        state: present
+        method: user
+
+- name: Install packages
+  hosts: localhost
+  become: true
+
+  tasks:
+    - zypper:
+        name: python3-pip
+        state: present
+
+    - zypper:
+        name: git
+        state: present
+
+    - zypper:
+        name: fish
+        state: present
+
+    - zypper:
+        name: gnome-pomodoro
+        state: present
+
+    - zypper:
+        name: make
+        state: present
+
+    - zypper:
+        name: typescript
+        state: present
+
+    - zypper:
+        name: NetworkManager-openconnect-gnome
+        state: present
+
+
+
+- name: Install global pip packages
+  hosts: localhost
+
+  tasks:
+    - pip:
+        name: pipenv
+        state: present
+
+    - pip:
+        name: ansible-lint
+        state: present
+
+    - pip:
+        name: black
+        state: present
+
+- name: change shell to fish
+  hosts: localhost
+
+  tasks:
+    - user:
+        name: hagenest
+        shell: /usr/bin/fish
+      become: true
+
+- name: Update system
+  hosts: localhost
+
+  tasks:
+    - name: update zypper packages
+      zypper:
+        name: '*'
+        state: latest
+      become: true
