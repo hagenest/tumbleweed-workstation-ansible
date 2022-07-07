@@ -236,3 +236,17 @@
   hosts: localhost
   tasks:
   - shell: git config --global user.name 'Christian Hagenest' && git config --global user.email 'christian.hagenest@suse.com'
+
+- name: Create OneDrive directory + symlink to Documents
+  hosts: localhost
+  tasks:
+  - file:
+      path: ~/OneDrive
+      state: directory
+      mode: '0755'
+      owner: 'hagenest'
+  # - file:
+  #     src: ~/Documents
+  #     dest: ~/OneDrive/Documents
+  #     owner: hagenest
+  #     state: hard
