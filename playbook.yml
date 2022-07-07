@@ -204,6 +204,10 @@
         name: yt-dlp
         state: present
 
+    - zypper:
+        name: PackageKit
+        state: absent
+
 - name: change shell to fish
   hosts: localhost
 
