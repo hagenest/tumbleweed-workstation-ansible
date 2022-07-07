@@ -137,6 +137,11 @@
         state: present
         method: user
 
+    - flatpak:
+        name: net.ankiweb.Anki
+        state: present
+        method: user
+
 - name: Install packages
   hosts: localhost
   become: true
