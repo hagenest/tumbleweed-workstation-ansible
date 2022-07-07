@@ -1,16 +1,10 @@
 # Ansible playbook for my tumbleweed work machine
 ---
 
-# - name: Only one login password
-#   become: true
-#   hosts: localhost
-#   when: 
-#   tasks:
-#     - shell: sudo touch /.root.key
-
-
+- hosts: localhost
 - name: Install vscode
   hosts: localhost
+
   become: true
 
   tasks:
@@ -35,6 +29,47 @@
         state: present
         refresh: yes
       when: code_version_cmd is failed
+
+- name: Install activate-linux
+  hosts: localhost
+  become: true
+  tasks:
+    - name: check if activate-linux is installed
+      shell: activate-linux --help
+      register: activate_linux_cmd
+      changed_when: false
+      ignore_errors: true
+      become: false
+
+    - name: add tschmitz-activate-linux key
+      shell: rpm --import https://download.opensuse.org/repositories/home:/tschmitz:/activate-linux/openSUSE_Tumbleweed/repodata/repomd.xml.key
+      when: activate_linux_cmd is failed
+
+    - name: add microsoft repo
+      shell: zypper addrepo https://download.opensuse.org/repositories/home:tschmitz:activate-linux/openSUSE_Tumbleweed/home:tschmitz:activate-linux.repo
+      when: activate_linux_cmd is failed
+
+    - name: install activate-linux
+      zypper:
+        name: activate-linux
+        state: present
+        refresh: yes
+      when: activate_linux_cmd is failed
+
+- name: Install mambaforge
+  hosts: localhost
+  become: true
+  tasks:
+    - name: check if mambaforge is installed
+      shell: conda --help
+      register: mambaforge_cmd
+      changed_when: false
+      ignore_errors: true
+      become: false
+
+    - name: run mambaforge install script
+      shell: curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh" && bash Mambaforge-$(uname)-$(uname -m).sh
+      when: mambaforge_cmd is failed
 
 
 - name: Install desktop applications
@@ -64,6 +99,41 @@
 
     - flatpak:
         name: com.mattjakeman.ExtensionManager
+        state: present
+        method: user
+
+    - flatpak:
+        name: com.slack.Slack
+        state: present
+        method: user
+
+    - flatpak:
+        name: com.microsoft.Teams
+        state: present
+        method: user
+
+    - flatpak:
+        name: org.openmw.OpenMW
+        state: present
+        method: user
+
+    - flatpak:
+        name: com.github.KRTirtho.Spotube
+        state: absent
+        method: user
+
+    - flatpak:
+        name: im.riot.Riot
+        state: present
+        method: user
+
+    - flatpak:
+        name: org.signal.Signal
+        state: present
+        method: user
+
+    - flatpak:
+        name: org.openttd.OpenTTD
         state: present
         method: user
 
@@ -100,22 +170,33 @@
         name: NetworkManager-openconnect-gnome
         state: present
 
-
-
-- name: Install global pip packages
-  hosts: localhost
-
-  tasks:
-    - pip:
-        name: pipenv
+    - zypper:
+        name: tealdeer
         state: present
 
-    - pip:
-        name: ansible-lint
+    - zypper:
+        name: neofetch
         state: present
 
-    - pip:
-        name: black
+    - zypper:
+        name: clang
+        state: present
+
+    - zypper:
+        name: devel_basis
+        state: present
+        type: pattern
+
+    - zypper:
+        name: neovim
+        state: present
+
+    - zypper:
+        name: onedrive
+        state: present
+
+    - zypper:
+        name: yt-dlp
         state: present
 
 - name: change shell to fish
@@ -136,3 +217,22 @@
         name: '*'
         state: latest
       become: true
+
+- name: Update tldr cache
+  hosts: localhost
+
+  tasks:
+    - name: update tldr cache
+      shell: tldr --update
+
+- name: Install spacevim
+  hosts: localhost
+  tasks:
+    - name: install spacevim
+      shell: curl -sLf https://spacevim.org/install.sh | bash
+      register: spacevim_install
+
+- name: Add username and email to gitconfig
+  hosts: localhost
+  tasks:
+  - shell: git config --global user.name 'Christian Hagenest' && git config --global user.email 'christian.hagenest@suse.com'
